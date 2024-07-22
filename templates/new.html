@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI-Aissistant</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+    }
+    .sidebar {
+      width: 250px;
+      background-color: #516a83;
+      /* background: linear-gradient(to right, #00C4CC, #5A32FA, #7D2AE8); */
+      /* background: linear-gradient(to right, #FDF2E9, #E8C09E, #9E4673); */
+
+
+      
+      color: white;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .sidebar h2 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 1.2em;
+    }
+    .history-item {
+      padding: 10px;
+      margin-bottom: 10px;
+      background-color: #597896;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .history-item:hover {
+      background-color: #2980b9;
+    }
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background-color: #ecf0f1;
+    }
+    .chat-header {
+      background-color: #3498db;
+      /* background: linear-gradient(to right, #00C4CC, #7b5fec, #8a5ec3); */
+      color: white;
+      padding: 15px 20px;
+      text-align: center;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    .chat-messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .message {
+      margin-bottom: 15px;
+      padding: 12px 15px;
+      border-radius: 20px;
+      max-width: 80%;
+      line-height: 1.4;
+    }
+    .message.user {
+      background-color: #3498db;
+      color: rgb(230, 227, 227);
+      align-self: flex-end;
+      margin-left: auto;
+    }
+    .message.bot {
+      background-color: #e0e7ec;
+      color: #080a0b;
+      align-self: flex-start;
+    }
+    .chat-input {
+      display: flex;
+      padding: 15px;
+      background-color: white;
+      border-top: 1px solid #bdc3c7;
+    }
+    .chat-input input[type="file"] {
+      display: none;
+    }
+    .chat-input label {
+      background-color: #3498db;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+      margin-right: 10px;
+      font-size: 0.9em;
+    }
+    .chat-input textarea {
+      flex: 1;
+      padding: 10px 15px;
+      border: 1px solid #bdc3c7;
+      border-radius: 20px;
+      resize: none;
+      font-size: 1em;
+    }
+    .chat-input button {
+      background-color: #3498db;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      margin-left: 10px;
+      font-size: 1em;
+      transition: background-color 0.3s;
+    }
+    .chat-input button:hover {
+      background-color: #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>Chat History</h2>
+    <div id="chat-history">
+      <!-- History items will be appended here -->
+    </div>
+  </div>
+  <div class="chat-container">
+    <div class="chat-header">Monica-style Langchain Chatbot</div>
+    <div class="chat-messages" id="chat-messages">
+      <!-- Messages will be appended here -->
+    </div>
+    <form id="langchainForm" class="chat-input">
+      <input type="file" id="langchain_image" name="langchain_image" accept="image/*">
+      <label for="langchain_image">Upload Image</label>
+      <textarea id="langchain_prompt" name="langchain_prompt" rows="1" placeholder="Type your message..." required></textarea>
+      <button type="submit">Send</button>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById('langchainForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+
+      const formData = new FormData();
+      const imageFile = document.getElementById('langchain_image').files[0];
+      const prompt = document.getElementById('langchain_prompt').value;
+
+      const userMessage = document.createElement('div');
+      userMessage.className = 'message user';
+      userMessage.innerText = prompt;
+      document.getElementById('chat-messages').appendChild(userMessage);
+      document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+
+      // Add to history
+      const historyItem = document.createElement('div');
+      historyItem.className = 'history-item';
+      historyItem.innerText = prompt;
+      document.getElementById('chat-history').appendChild(historyItem);
+
+      if (imageFile) {
+        formData.append('langchain_image', imageFile);
+      }
+      formData.append('langchain_prompt', prompt);
+
+      try {
+        const response = await fetch('/submit', {
+          method: 'POST',
+          body: formData
+        });
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let botMessage = document.createElement('div');
+        botMessage.className = 'message bot';
+        document.getElementById('chat-messages').appendChild(botMessage);
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          botMessage.innerText += decoder.decode(value, { stream: true });
+          document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+        }
+      } catch (error) {
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'message bot';
+        errorMessage.innerText = 'Error: ' + error.message;
+        document.getElementById('chat-messages').appendChild(errorMessage);
+        document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+      }
+
+      document.getElementById('langchain_prompt').value = '';
+    });
+  </script>
+</body>
+</html>

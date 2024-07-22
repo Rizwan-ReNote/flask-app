@@ -1,8 +1,9 @@
-from flask import Flask, request, Response, render_template
+import os
+
+import requests
+from flask import Flask, Response, render_template, request
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
-import os
-import requests
 
 app = Flask(__name__)
 CORS(app)
@@ -15,7 +16,8 @@ API_URL = 'http://34.64.111.198:8000/chatbot_streams'
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('ai.html')
+
 
 def stream_response(image_path, langchain_prompt):
     # Prepare data for the API request
@@ -42,4 +44,4 @@ def submit():
     return Response(stream_response(image_path, langchain_prompt), content_type='text/plain')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000)
+    app.run(host='0.0.0.0', port=5000)
