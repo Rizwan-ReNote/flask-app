@@ -12,7 +12,7 @@ UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-API_URL = 'http://34.64.111.198:8000/chatbot_streams'
+API_URL = 'http://34.47.76.149:8000/chatbot_streams'
 
 @app.route('/')
 def index():
